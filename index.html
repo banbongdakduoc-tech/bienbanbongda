@@ -1,0 +1,357 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8" />
+  <title>Biên bản Trận đấu</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <!-- Font -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+
+  <!-- Styles -->
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+<header class="app-header">
+  <div class="brand">
+    <div class="dot"></div>
+    <div class="title">Biên bản Trận đấu</div>
+  </div>
+  <div class="toolbar">
+    <button id="btnNewMatch" class="btn ghost">🆕 Trận mới</button>
+    <button id="btnOpenFinish" class="btn success">✅ Kết thúc trận & Xem tổng kết</button>
+  </div>
+</header>
+
+<main class="main">
+
+  <!-- QUẢN LÝ ĐỘI -->
+  <section class="card">
+    <div class="header-row">
+      <h2>1. Quản lý đội bóng</h2>
+      <div class="row">
+        <button id="btnSaveTeam" class="btn">💾 Lưu đội</button>
+      </div>
+    </div>
+    <p class="note">
+      Lưu danh sách đội vào trình duyệt. Sau đó có thể chọn đội vào trận, không cần nhập lại.<br/>
+      - Tên đội <strong>bắt buộc</strong><br/>
+      - Danh sách cầu thủ: Số áo + Tên cầu thủ
+    </p>
+
+    <div class="grid g2">
+      <div class="fc">
+        <label>Tên đội</label>
+        <input id="teamNameInput" type="text" placeholder="VD: FC A" />
+      </div>
+      <div class="fc">
+        <label>Ghi chú (tuỳ chọn)</label>
+        <input id="teamNoteInput" type="text" placeholder="VD: Captain: Minh #10" />
+      </div>
+    </div>
+
+    <div class="players-card">
+      <div class="players-header">
+        <h3>Danh sách cầu thủ</h3>
+        <button id="btnAddPlayerRow" class="btn ghost small">➕ Thêm cầu thủ</button>
+      </div>
+      <table class="table">
+        <thead>
+          <tr>
+            <th style="width:80px">Số áo</th>
+            <th>Cầu thủ</th>
+            <th style="width:60px"></th>
+          </tr>
+        </thead>
+        <tbody id="playersTableBody">
+          <!-- dynamic rows -->
+        </tbody>
+      </table>
+    </div>
+
+    <div class="saved-teams">
+      <h3>Đội đã lưu</h3>
+      <div id="savedTeamsList" class="saved-list">
+        <!-- dynamic cards -->
+      </div>
+    </div>
+  </section>
+
+  <!-- THÔNG TIN TRẬN ĐẤU -->
+  <section class="card">
+    <div class="header-row">
+      <h2>2. Thiết lập trận đấu</h2>
+    </div>
+
+    <div class="grid g2">
+      <div class="fc">
+        <label>Đội A</label>
+        <select id="teamASelect"></select>
+      </div>
+      <div class="fc">
+        <label>Đội B</label>
+        <select id="teamBSelect"></select>
+      </div>
+
+      <div class="fc">
+        <label>Thời gian bắt đầu</label>
+        <input id="matchDateTime" type="datetime-local" />
+      </div>
+      <div class="fc">
+        <label>Địa điểm (tuỳ chọn)</label>
+        <input id="matchLocation" type="text" placeholder="VD: Sân A1" />
+      </div>
+    </div>
+
+    <div id="scoreBoard" class="scoreboard">
+      <div class="team-col">
+        <div class="team-name" id="scoreTeamA">Đội A</div>
+        <div class="score-num" id="scoreGoalsA">0</div>
+      </div>
+      <div class="score-mid">vs</div>
+      <div class="team-col">
+        <div class="team-name" id="scoreTeamB">Đội B</div>
+        <div class="score-num" id="scoreGoalsB">0</div>
+      </div>
+    </div>
+    <div class="note small-note">Tỉ số tự cập nhật theo danh sách bàn thắng.</div>
+  </section>
+
+  <!-- SỰ KIỆN BÀN THẮNG -->
+  <section class="card">
+    <div class="header-row">
+      <h2>3. Bàn thắng</h2>
+      <div class="row">
+        <button id="btnAddGoal" class="btn ghost small">➕ Thêm bàn thắng</button>
+      </div>
+    </div>
+
+    <div class="grid g4 action-row">
+      <div class="fc">
+        <label>Phút</label>
+        <input id="goalMinute" type="number" min="0" placeholder="VD: 23" />
+      </div>
+      <div class="fc">
+        <label>Đội</label>
+        <select id="goalTeam"></select>
+      </div>
+      <div class="fc">
+        <label>Cầu thủ ghi bàn</label>
+        <select id="goalPlayer"></select>
+      </div>
+      <div class="fc">
+        <label>Ghi chú (tuỳ chọn)</label>
+        <input id="goalNote" type="text" placeholder="VD: sút xa" />
+      </div>
+    </div>
+
+    <table class="table" id="goalsTable">
+      <thead>
+        <tr>
+          <th style="width:60px">Phút</th>
+          <th style="width:120px">Đội</th>
+          <th>Cầu thủ</th>
+          <th>Ghi chú</th>
+          <th style="width:60px"></th>
+        </tr>
+      </thead>
+      <tbody id="goalsTbody"></tbody>
+    </table>
+  </section>
+
+  <!-- SỰ KIỆN THẺ -->
+  <section class="card">
+    <div class="header-row">
+      <h2>4. Thẻ phạt</h2>
+      <div class="row">
+        <button id="btnAddCard" class="btn ghost small">➕ Thêm thẻ</button>
+      </div>
+    </div>
+
+    <div class="grid g4 action-row">
+      <div class="fc">
+        <label>Phút</label>
+        <input id="cardMinute" type="number" min="0" placeholder="VD: 45+2" />
+      </div>
+      <div class="fc">
+        <label>Đội</label>
+        <select id="cardTeam"></select>
+      </div>
+      <div class="fc">
+        <label>Cầu thủ</label>
+        <select id="cardPlayer"></select>
+      </div>
+      <div class="fc">
+        <label>Loại thẻ</label>
+        <select id="cardType">
+          <option value="Vàng">Vàng</option>
+          <option value="Đỏ">Đỏ</option>
+        </select>
+      </div>
+    </div>
+
+    <table class="table" id="cardsTable">
+      <thead>
+        <tr>
+          <th style="width:60px">Phút</th>
+          <th style="width:120px">Đội</th>
+          <th>Cầu thủ</th>
+          <th style="width:80px">Thẻ</th>
+          <th style="width:60px"></th>
+        </tr>
+      </thead>
+      <tbody id="cardsTbody"></tbody>
+    </table>
+  </section>
+
+  <!-- TỔNG KẾT TRẬN (chỉ xuất hiện sau khi Hoàn thành trong popup) -->
+  <section class="card" id="summaryCard" style="display:none;">
+    <div class="header-row">
+      <h2>5. Tổng kết trận đấu</h2>
+    </div>
+
+    <div class="summary-box">
+      <div class="sum-line"><strong>Đội A:</strong> <span id="sumTeamA"></span></div>
+      <div class="sum-line"><strong>Đội B:</strong> <span id="sumTeamB"></span></div>
+      <div class="sum-line"><strong>Tỉ số cuối:</strong> <span id="sumScore"></span></div>
+      <div class="sum-line"><strong>Thời gian:</strong> <span id="sumTime"></span></div>
+      <div class="sum-line"><strong>Địa điểm:</strong> <span id="sumLocation"></span></div>
+      <div class="sum-line"><strong>Trọng tài:</strong> <span id="sumReferee"></span></div>
+      <div class="sum-line"><strong>Đội trưởng A:</strong> <span id="sumCaptainA"></span></div>
+      <div class="sum-line"><strong>Đội trưởng B:</strong> <span id="sumCaptainB"></span></div>
+    </div>
+
+    <div class="split-wrap" style="margin-top:16px;">
+      <div class="half">
+        <h3>Bàn thắng</h3>
+        <table class="table" id="summaryGoalsTable">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Phút</th>
+              <th>Đội</th>
+              <th>Cầu thủ</th>
+              <th>Ghi chú</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+
+      <div class="half">
+        <h3>Thẻ phạt</h3>
+        <table class="table" id="summaryCardsTable">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Phút</th>
+              <th>Đội</th>
+              <th>Cầu thủ</th>
+              <th>Thẻ</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="sign-row">
+      <div class="sign-col">
+        <div class="sign-label">Đội trưởng A</div>
+        <img id="sumSigA" class="sign-img" alt="Chữ ký đội trưởng A"/>
+      </div>
+      <div class="sign-col">
+        <div class="sign-label">Đội trưởng B</div>
+        <img id="sumSigB" class="sign-img" alt="Chữ ký đội trưởng B"/>
+      </div>
+      <div class="sign-col">
+        <div class="sign-label">Trọng tài</div>
+        <img id="sumSigR" class="sign-img" alt="Chữ ký trọng tài"/>
+      </div>
+    </div>
+
+    <div class="note small-note" style="margin-top:12px;">
+      Đây là bản tổng kết cuối cùng. Bạn có thể chụp màn hình / in (Ctrl+P).
+    </div>
+  </section>
+
+</main>
+
+<div id="toast" class="toast hidden"></div>
+
+<!-- POPUP XÁC NHẬN KẾT THÚC TRẬN -->
+<div id="overlay" class="overlay hidden"></div>
+<div id="finishModal" class="modal hidden">
+  <div class="modal-header">
+    <h3>Hoàn tất trận đấu</h3>
+    <button class="icon" id="closeFinishModal">✕</button>
+  </div>
+
+  <div class="modal-body">
+    <p class="note">
+      Kiểm tra tỉ số cuối và cho các bên ký xác nhận.
+    </p>
+
+    <div class="preview-box">
+      <div><strong>Trận:</strong> <span id="previewTeams"></span></div>
+      <div><strong>Tỉ số tạm:</strong> <span id="previewScore"></span></div>
+    </div>
+
+    <div class="grid g2" style="margin-top:16px;">
+      <div class="fc">
+        <label>Thời gian thi đấu (dùng cho tổng kết)</label>
+        <input id="finalMatchTime" type="datetime-local" />
+      </div>
+      <div class="fc">
+        <label>Địa điểm</label>
+        <input id="finalLocation" type="text" placeholder="VD: Sân A1" />
+      </div>
+
+      <div class="fc">
+        <label>Trọng tài</label>
+        <input id="refereeNameModal" type="text" placeholder="Tên trọng tài" />
+      </div>
+      <div class="fc">
+        <label>Đội trưởng Đội A</label>
+        <input id="captainANameModal" type="text" placeholder="Tên đội trưởng A" />
+      </div>
+
+      <div class="fc">
+        <label>Đội trưởng Đội B</label>
+        <input id="captainBNameModal" type="text" placeholder="Tên đội trưởng B" />
+      </div>
+    </div>
+
+    <div class="sig-area">
+      <div class="sig-col">
+        <div class="sig-label">Ký Đội trưởng A</div>
+        <canvas id="sigCaptainA"></canvas>
+        <button id="clearSigA" class="btn ghost small sig-clear-btn">Xoá</button>
+      </div>
+
+      <div class="sig-col">
+        <div class="sig-label">Ký Đội trưởng B</div>
+        <canvas id="sigCaptainB"></canvas>
+        <button id="clearSigB" class="btn ghost small sig-clear-btn">Xoá</button>
+      </div>
+
+      <div class="sig-col">
+        <div class="sig-label">Ký Trọng tài</div>
+        <canvas id="sigReferee"></canvas>
+        <button id="clearSigR" class="btn ghost small sig-clear-btn">Xoá</button>
+      </div>
+    </div>
+
+    <div class="note small-note" style="margin-top:10px;">
+      Dùng tay (mobile) hoặc chuột (PC) để ký trực tiếp.
+    </div>
+  </div>
+
+  <div class="modal-footer">
+    <button id="btnConfirmFinish" class="btn success">🏁 Hoàn thành trận</button>
+  </div>
+</div>
+
+<script src="script.js"></script>
+</body>
+</html>
