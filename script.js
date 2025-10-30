@@ -140,74 +140,95 @@ function clearChildren(node){
 }
 
 // Render roster table for selected team
+// ========== PATCH for duplicate roster when switching teams ==========
 function renderRoster(which){
   const tname = which==="A" ? teamASelect.value : teamBSelect.value;
   const tbody = which==="A" ? teamARosterTbody : teamBRosterTbody;
-  const lbl = which==="A" ? teamANameLbl : teamBNameLbl;
+  const lbl   = which==="A" ? teamANameLbl     : teamBNameLbl;
 
+  // Khi chưa chọn đội -> reset đúng nhánh & UI
   if(!tname){
-    lbl.textContent = (which==="A"?"Đội A":"Đội B");
-    tbody.innerHTML=`<tr><td colspan="3" class="dim">(chưa chọn đội)</td></tr>`;
-    if(which==="A") { matchData.teamA=null; matchData.lineupA=[]; }
-    else { matchData.teamB=null; matchData.lineupB=[]; }
+    lbl.textContent = (which==="A" ? "Đội A" : "Đội B");
+    tbody.innerHTML = `<tr><td colspan="3" class="dim">(chưa chọn đội)</td></tr>`;
+    if(which==="A"){ matchData.teamA = null; matchData.lineupA = []; }
+    else           { matchData.teamB = null; matchData.lineupB = []; }
     updateSignLabels();
+    fillGoalCardTeamSelects(); // giữ đồng bộ dropdown sự kiện
     return;
   }
+
+  // Lấy team cũ để biết có đổi đội hay không
+  const prevName = (which==="A" ? matchData.teamA : matchData.teamB);
+
+  // Cập nhật tên đội vào matchData trước
+  if(which==="A"){ matchData.teamA = tname; }
+  else           { matchData.teamB = tname; }
 
   lbl.textContent = tname;
-  const teamObj = allTeams.find(t=>t.name===tname);
+
+  // Tìm object đội
+  const teamObj = allTeams.find(t => t.name === tname);
   if(!teamObj){
-    tbody.innerHTML=`<tr><td colspan="3" class="dim">(không tìm thấy cầu thủ)</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="3" class="dim">(không tìm thấy cầu thủ)</td></tr>`;
     return;
   }
 
-  // Save team name to matchData
-  if(which==="A"){ matchData.teamA = tname; }
-  else{ matchData.teamB = tname; }
+  // Xác định mảng lineup mục tiêu
+  const targetLineup = (which==="A" ? matchData.lineupA : matchData.lineupB);
 
-  // build lineup state if empty (so we can tick)
-  const targetLineup = which==="A" ? matchData.lineupA : matchData.lineupB;
-  // ensure each player is in lineup array
-  teamObj.players.forEach(pl=>{
-    if(!targetLineup.find(x=>x.soAo==pl.soAo && x.ten===pl.ten)){
-      targetLineup.push({
-        soAo: pl.soAo,
-        ten: pl.ten,
-        played:false
-      });
+  // ⚠️ QUAN TRỌNG: nếu người dùng đổi sang đội khác -> reset lineup, tránh cộng dồn
+  if(prevName && prevName !== tname){
+    targetLineup.length = 0;
+  }
+
+  // Đồng bộ lineup theo danh sách cầu thủ của team hiện tại
+  // (đảm bảo mỗi cầu thủ có đúng 1 bản ghi)
+  const key = p => `${p.soAo}@@${p.ten}`;
+  const wanted = new Map(teamObj.players.map(p => [key(p), {soAo:p.soAo, ten:p.ten}]));
+  const existing = new Set(targetLineup.map(p => key(p)));
+
+  // Thêm những cầu thủ còn thiếu
+  for(const [k, pl] of wanted.entries()){
+    if(!existing.has(k)){
+      targetLineup.push({ soAo: pl.soAo, ten: pl.ten, played: false });
     }
-  });
+  }
+  // Loại bỏ những cầu thủ không thuộc đội mới (trường hợp đổi đội)
+  for(let i = targetLineup.length - 1; i >= 0; i--){
+    const k = key(targetLineup[i]);
+    if(!wanted.has(k)){
+      targetLineup.splice(i, 1);
+    }
+  }
 
-  // render rows
-  tbody.innerHTML="";
-  targetLineup.forEach((p,idx)=>{
-    const tr=document.createElement("tr");
+  // Render bảng đội hình
+  tbody.innerHTML = "";
+  targetLineup.forEach(p => {
+    const tr = document.createElement("tr");
 
-    const tdChk=document.createElement("td");
-    tdChk.style.textAlign="center";
-    const chk=document.createElement("input");
-    chk.type="checkbox";
-    chk.checked=p.played===true;
-    chk.addEventListener("change",()=>{
-      p.played = chk.checked;
-    });
+    const tdChk = document.createElement("td");
+    tdChk.style.textAlign = "center";
+    const chk = document.createElement("input");
+    chk.type = "checkbox";
+    chk.checked = p.played === true;
+    chk.addEventListener("change", () => { p.played = chk.checked; });
     tdChk.appendChild(chk);
 
-    const tdNum=document.createElement("td");
-    tdNum.textContent=p.soAo;
+    const tdNum = document.createElement("td");
+    tdNum.textContent = p.soAo;
 
-    const tdName=document.createElement("td");
-    tdName.textContent=p.ten;
+    const tdName = document.createElement("td");
+    tdName.textContent = p.ten;
 
     tr.appendChild(tdChk);
     tr.appendChild(tdNum);
     tr.appendChild(tdName);
-
     tbody.appendChild(tr);
   });
 
+  // Cập nhật label chữ ký & dropdown sự kiện (đội/cầu thủ) để không bị lặp
   updateSignLabels();
-  fillGoalCardTeamSelects(); // keep forms in sync
+  fillGoalCardTeamSelects();
 }
 
 // keep labels in sign modal / final summary in sync
