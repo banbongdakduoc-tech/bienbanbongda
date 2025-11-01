@@ -39,20 +39,22 @@
           ]
         },
         {
-          "tenDoi": "D25",
+          "tenDoi": "Gooners",
           "cauThu": [
-            { "soAo": 10, "ten": "Lâm Thế Hưng" },
-            { "soAo": 45, "ten": "Nguyễn Hữu Nên" },
-            { "soAo": 78, "ten": "Huỳnh Công Khôi" },
-            { "soAo": 23, "ten": "Đặng Minh Hưng" },
-            { "soAo": 11, "ten": "Nguyễn Anh Kiệt" },
-            { "soAo": 22, "ten": "Trần An Khang" },
-            { "soAo": 1,  "ten": "Trương Thiện Nhân" },
-            { "soAo": 7,  "ten": "Nguyễn Huy Xuân Sơn" },
-            { "soAo": 99, "ten": "Trương Nam Khang" },
-            { "soAo": 6,  "ten": "Nguyễn Anh Huy" },
-            { "soAo": 30, "ten": "Nguyễn Cao Thắng" },
-            { "soAo": 57, "ten": "Nguyễn Gia Huy" }
+            { "soAo": 21, "ten": "Phan Hoàng Nguyên" },
+            { "soAo": 10, "ten": "Đỗ Đức Huy" },
+            { "soAo": 14, "ten": "Phạm Nguyễn Gia Huy" },
+            { "soAo": 19, "ten": "Ngô Đình Huy" },
+            { "soAo": 7,  "ten": "Nguyễn Minh Trí" },
+            { "soAo": 26, "ten": "Trần Hà Anh Khôi" },
+            { "soAo": 17, "ten": "Phạm Hữu Nghĩa" },
+            { "soAo": 9,  "ten": "Trần Nguyễn Trung Tuấn" },
+            { "soAo": 6,  "ten": "Nguyễn Tấn Hưng" },
+            { "soAo": 1,  "ten": "Trần Tấn Lợi" },
+            { "soAo": 29, "ten": "Tô Huy Hoàng" },
+            { "soAo": 26, "ten": "Lê Ngọc Thắng" },
+            { "soAo": 36, "ten": "Nguyễn Cao Đức Anh" },
+            { "soAo": 5,  "ten": "Lương Lê Chí Thành" }
           ]
         },
         {
@@ -109,33 +111,37 @@
           ]
         },
         {
-          "tenDoi": "FC B3",
+          "tenDoi": "D25",
           "cauThu": [
-            { "soAo": 1,  "ten": "Nguyễn Văn B3-1" },
-            { "soAo": 2,  "ten": "Trần Văn B3-2" },
-            { "soAo": 3,  "ten": "Lê Công B3-3" },
-            { "soAo": 4,  "ten": "Phạm Minh B3-4" },
-            { "soAo": 5,  "ten": "Đỗ Hoàng B3-5" },
-            { "soAo": 6,  "ten": "Võ Hải B3-6" },
-            { "soAo": 7,  "ten": "Huỳnh Đức B3-7" },
-            { "soAo": 8,  "ten": "Bùi Khánh B3-8" },
-            { "soAo": 9,  "ten": "Phan Huy B3-9" },
-            { "soAo": 10, "ten": "Lâm Tấn B3-10" }
+            { "soAo": 10, "ten": "Lâm Thế Hưng" },
+            { "soAo": 45, "ten": "Nguyễn Hữu Nên" },
+            { "soAo": 78, "ten": "Huỳnh Công Khôi" },
+            { "soAo": 23, "ten": "Đặng Minh Hưng" },
+            { "soAo": 11, "ten": "Nguyễn Anh Kiệt" },
+            { "soAo": 22, "ten": "Trần An Khang" },
+            { "soAo": 1,  "ten": "Trương Thiện Nhân" },
+            { "soAo": 7,  "ten": "Nguyễn Huy Xuân Sơn" },
+            { "soAo": 99, "ten": "Trương Nam Khang" },
+            { "soAo": 6,  "ten": "Nguyễn Anh Huy" },
+            { "soAo": 30, "ten": "Nguyễn Cao Thắng" },
+            { "soAo": 57, "ten": "Nguyễn Gia Huy" }
           ]
         },
         {
-          "tenDoi": "FC B4",
+          "tenDoi": "MU",
           "cauThu": [
-            { "soAo": 1,  "ten": "Nguyễn Văn B4-1" },
-            { "soAo": 2,  "ten": "Trần Văn B4-2" },
-            { "soAo": 3,  "ten": "Lê Công B4-3" },
-            { "soAo": 4,  "ten": "Phạm Minh B4-4" },
-            { "soAo": 5,  "ten": "Đỗ Hoàng B4-5" },
-            { "soAo": 6,  "ten": "Võ Hải B4-6" },
-            { "soAo": 7,  "ten": "Huỳnh Đức B4-7" },
-            { "soAo": 8,  "ten": "Bùi Khánh B4-8" },
-            { "soAo": 9,  "ten": "Phan Huy B4-9" },
-            { "soAo": 10, "ten": "Lâm Tấn B4-10" }
+            { "soAo": 30, "ten": "Huỳnh Minh Tín" },
+            { "soAo": 26, "ten": "Lê Văn Nguyên Tú" },
+            { "soAo": 23, "ten": "Đặng Xuân Tiến" },
+            { "soAo": 14, "ten": "Đỗ Văn Trung" },
+            { "soAo": 7,  "ten": "Bạch Hưng Thái Sơn" },
+            { "soAo": 27, "ten": "Nguyễn Công Trọng" },
+            { "soAo": 25, "ten": "Vũ Nhật Tiến" },
+            { "soAo": 22, "ten": "Phạm Hoàng Diệp Vy" },
+            { "soAo": 2,  "ten": "Nguyễn Trọng" },
+            { "soAo": 1,  "ten": "Lê Ngọc Tín" },
+            { "soAo": 11, "ten": "Trần Công Triệu" },
+            { "soAo": 30, "ten": "La Tấn Vũ" }
           ]
         }
       ]
