@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width,initial-scale=1"/>
   <title>Biên bản trận đấu</title>
   <link rel="stylesheet" href="style.css"/>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
 
@@ -95,9 +94,6 @@
   <section class="card">
     <div class="card-header-row">
       <h2>2. Sự kiện trận đấu</h2>
-      <div class="subnote">
-        Thêm bàn thắng và thẻ phạt. Hệ thống sẽ tính tỷ số khi tổng kết.
-      </div>
     </div>
 
     <div class="events-row">
@@ -117,6 +113,13 @@
             <label>Phút</label>
             <input id="goalMinuteInput" class="input-dark" placeholder="VD: 12"/>
           </div>
+          <div class="fc">
+            <label>Loại bàn</label>
+            <select id="goalTypeSelect" class="select-dark">
+              <option value="normal">Bình thường</option>
+              <option value="own">Phản lưới</option>
+            </select>
+          </div>
         </div>
         <button id="btnAddGoal" class="btn green small mt8">+ Thêm bàn thắng</button>
 
@@ -127,11 +130,13 @@
                 <th>#</th>
                 <th>Phút</th>
                 <th>Cầu thủ</th>
-                <th>Đội</th>
+                <th>Đội (được tính)</th>
+                <th>Loại</th>
+                <th class="col-narrow">Xoá</th>
               </tr>
             </thead>
             <tbody id="goalsListTbody">
-              <tr><td colspan="4" class="dim">(chưa có)</td></tr>
+              <tr><td colspan="6" class="dim">(chưa có)</td></tr>
             </tbody>
           </table>
         </div>
@@ -172,10 +177,11 @@
                 <th>Thẻ</th>
                 <th>Cầu thủ</th>
                 <th>Đội</th>
+                <th class="col-narrow">Xoá</th>
               </tr>
             </thead>
             <tbody id="cardsListTbody">
-              <tr><td colspan="5" class="dim">(chưa có)</td></tr>
+              <tr><td colspan="6" class="dim">(chưa có)</td></tr>
             </tbody>
           </table>
         </div>
@@ -189,7 +195,7 @@
     <div class="card-header-row">
       <h2>3. Kết thúc trận đấu & Ký biên bản</h2>
       <div class="subnote">
-        Sau khi ký xong bạn sẽ nhận được biên bản tổng kết và có thể tải file JSON để dùng cho BXH.
+        Sau khi ký xong sẽ có biên bản tổng kết và bật nút tải JSON.
       </div>
     </div>
 
@@ -206,7 +212,7 @@
     <div class="card-header-row">
       <h2>4. Biên bản cuối cùng</h2>
       <div class="subnote">
-        Đây là bản chính thức sau khi ký. Bạn chỉ cần copy file JSON tải xuống và đưa vào repo BXH.
+        Đây là bản chính thức sau khi ký. Copy JSON để đưa vào BXH.
       </div>
     </div>
 
@@ -240,11 +246,12 @@
               <th>#</th>
               <th>Phút</th>
               <th>Cầu thủ</th>
-              <th>Đội</th>
+              <th>Đội (được tính)</th>
+              <th>Loại</th>
             </tr>
           </thead>
           <tbody id="finalGoalsTbody">
-            <tr><td colspan="4" class="dim">(không có)</td></tr>
+            <tr><td colspan="5" class="dim">(không có)</td></tr>
           </tbody>
         </table>
       </div>
