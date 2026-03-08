@@ -16,7 +16,7 @@ function isInAppWebView(){
 }
 function safeFilename(name){
   if (!name) return 'match';
-  let s = name.normalize('NFD').replace(/[\u0300-\u036f]/g, ''); // strip accents
+  let s = name.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
   s = s.replace(/[^a-z0-9._-]+/gi, '_').replace(/_+/g, '_').replace(/^_|_$/g, '');
   return s || 'match';
 }
@@ -29,7 +29,6 @@ async function downloadJSONRobust(obj, suggestedName){
   const blob = new Blob([json], { type: 'application/json;charset=utf-8' });
   const filename = safeFilename((suggestedName || 'match').replace(/:/g, '-')) + '.json';
 
-  // 1) Web Share (Android webview friendly)
   if (navigator.canShare && window.File) {
     const file = new File([blob], filename, { type: blob.type });
     if (navigator.canShare({ files: [file] })) {
@@ -40,7 +39,6 @@ async function downloadJSONRobust(obj, suggestedName){
     }
   }
 
-  // 2) Anchor + object URL
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
@@ -51,7 +49,6 @@ async function downloadJSONRobust(obj, suggestedName){
   a.remove();
   setTimeout(()=>URL.revokeObjectURL(url), 2000);
 
-  // 3) Fallback for in-app webviews blocking downloads
   if (isInAppWebView()) {
     const ok = await copyToClipboard(json);
     if (ok) alert('Trình duyệt đang chặn tải file.\nĐã sao chép JSON vào clipboard, hãy dán vào file .json để lưu.');
@@ -88,7 +85,7 @@ let cardTeamSelect, cardPlayerSelect, cardMinuteInput, cardTypeSelect, btnAddCar
 let btnOpenSign, signModal, btnCloseModal, btnFinishMatch;
 let matchDateInput, matchTimeInput, refNameInput;
 let sigCanvasA, sigCanvasB, sigCanvasRef;
-let btnDownloadJSON, statusMsg;
+let btnDownloadJSON, btnPreviewJSON, btnResetForm, statusMsg;
 
 // final summary DOM
 let finalSummarySection;
@@ -117,7 +114,6 @@ async function loadTeams(){
   }
 }
 
-// Extract teams from structure {cheDo:"bang",bangs:[...]} or {cheDo:"vong",doi:[...]}
 function extractTeams(json){
   const arr=[];
   if(!json) return arr;
@@ -140,7 +136,6 @@ function extractTeams(json){
       });
     }
   }else{
-    // vong: json.doi
     if(Array.isArray(json.doi)){
       json.doi.forEach(d=>{
         const nm=d.tenDoi||"";
@@ -156,7 +151,6 @@ function extractTeams(json){
   return arr;
 }
 
-// populate Đội A / Đội B selects
 function fillTeamDropdowns(failed=false){
   clearChildren(teamASelect);
   clearChildren(teamBSelect);
@@ -170,12 +164,11 @@ function fillTeamDropdowns(failed=false){
     teamBSelect.appendChild(new Option(t.name, t.name));
   });
 
-  fillGoalCardTeamSelects(); // also init the team list for events section
+  fillGoalCardTeamSelects();
 }
 
 function clearChildren(node){ while(node.firstChild) node.removeChild(node.firstChild); }
 
-// Render roster table for selected team
 function renderRoster(which){
   const tname = which==="A" ? teamASelect.value : teamBSelect.value;
   const tbody = which==="A" ? teamARosterTbody : teamBRosterTbody;
@@ -191,7 +184,6 @@ function renderRoster(which){
     return;
   }
 
-  // không cho chọn 2 đội trùng nhau
   if (which==="A" && tname && teamBSelect.value && tname === teamBSelect.value) {
     toast("Hai đội phải khác nhau");
     teamASelect.value = ""; renderRoster("A"); return;
@@ -249,7 +241,6 @@ function renderRoster(which){
   fillGoalCardTeamSelects();
 }
 
-// keep labels in sign modal / final summary in sync
 function updateSignLabels(){
   const aName = matchData.teamA || "Đội A";
   const bName = matchData.teamB || "Đội B";
@@ -264,15 +255,12 @@ function updateSignLabels(){
   if(finalTeamBTitle) finalTeamBTitle.textContent = bName;
 }
 
-// fill "Đội" dropdown trong phần sự kiện (bàn thắng / thẻ)
 function fillGoalCardTeamSelects(){
-  // Goal form
   clearChildren(goalTeamSelect);
   goalTeamSelect.appendChild(new Option("-- Chọn đội --",""));
   if(matchData.teamA) goalTeamSelect.appendChild(new Option(matchData.teamA,"A"));
   if(matchData.teamB) goalTeamSelect.appendChild(new Option(matchData.teamB,"B"));
 
-  // Card form
   clearChildren(cardTeamSelect);
   cardTeamSelect.appendChild(new Option("-- Chọn đội --",""));
   if(matchData.teamA) cardTeamSelect.appendChild(new Option(matchData.teamA,"A"));
@@ -282,7 +270,6 @@ function fillGoalCardTeamSelects(){
   refreshPlayerDropdown("card");
 }
 
-// when chọn đội trong form sự kiện -> load cầu thủ của đội đó
 function refreshPlayerDropdown(which){
   const teamSel = which==="goal"? goalTeamSelect: cardTeamSelect;
   const playerSel = which==="goal"? goalPlayerSelect: cardPlayerSelect;
@@ -308,25 +295,34 @@ function attachTeamSelectEvents(){
 
 // ====== ADD / RENDER / DELETE GOAL ======
 function addGoal(){
-  const tval = goalTeamSelect.value; // "A" or "B"
-  const pval = goalPlayerSelect.value; // "num@@name"
+  const tval = goalTeamSelect.value;
+  const pval = goalPlayerSelect.value;
   const minuteRaw = goalMinuteInput.value.trim();
-  const gtype  = goalTypeSelect.value || 'normal'; // "normal" | "own"
+  const gtype  = goalTypeSelect.value;
 
   if(!tval || !pval || !minuteRaw){
     toast("Thiếu thông tin bàn thắng");
     return;
   }
 
-  const minute = minuteRaw; // keep raw (e.g., 45+1)
+  const minute = minuteRaw;
   const [num, name] = pval.split("@@");
+  
+  if(!num){
+    toast("Cầu thủ không có số áo!");
+    return;
+  }
+
   const teamAName = matchData.teamA || "";
   const teamBName = matchData.teamB || "";
 
-  // Nếu là phản lưới: bàn được ghi CHO đối thủ
   let creditedTeam = (tval==="A") ? teamAName : teamBName;
   let victimTeam   = (tval==="A") ? teamAName : teamBName;
+  
   if(gtype === 'own'){
+    if(!confirm(`Xác nhận bàn phản lưới của cầu thủ ${name} (${tval==="A"?teamAName:teamBName})?`)){
+      return;
+    }
     creditedTeam = (tval==="A") ? teamBName : teamAName;
   }
 
@@ -340,7 +336,6 @@ function addGoal(){
     victimTeam: (gtype==='own') ? victimTeam : undefined
   });
 
-  // sort theo phút
   matchData.goals.sort((a,b)=>{
     const aa = parseInt(String(a.minute).split('+')[0]||'0',10);
     const bb = parseInt(String(b.minute).split('+')[0]||'0',10);
@@ -359,7 +354,9 @@ function renderGoalsTable(){
     return;
   }
   matchData.goals.forEach((g,idx)=>{
-    const typeBadge = g.ownGoal ? 'Phản lưới' : '—';
+    const typeBadge = g.ownGoal ? 
+      '<span class="badge badge-own">Phản lưới</span>' : 
+      '<span class="badge badge-ghost">—</span>';
     const tr=createEl("tr");
     tr.innerHTML=`
       <td>${idx+1}</td>
@@ -399,6 +396,12 @@ function addCard(){
   }
 
   const [num,name]=pval.split("@@");
+  
+  if(!num){
+    toast("Cầu thủ không có số áo!");
+    return;
+  }
+
   const teamName=(tval==="A"? matchData.teamA : matchData.teamB) || "";
 
   matchData.cards.push({
@@ -472,9 +475,29 @@ function setupSignaturePad(key, canvas){
     }
   }
 
-  function start(e){ e.preventDefault(); const p=pos(e); pad.drawing=true; pad.ctx.beginPath(); pad.ctx.moveTo(p.x,p.y); }
-  function move(e){ if(!pad.drawing) return; e.preventDefault(); const p=pos(e); pad.ctx.lineTo(p.x,p.y); pad.ctx.stroke(); }
-  function end(e){ if(!pad.drawing) return; e.preventDefault(); pad.drawing=false; }
+  function start(e){ 
+    e.preventDefault(); 
+    const p=pos(e); 
+    pad.drawing=true; 
+    pad.ctx.beginPath(); 
+    pad.ctx.moveTo(p.x,p.y);
+    canvas.classList.add('drawing');
+  }
+  
+  function move(e){ 
+    if(!pad.drawing) return; 
+    e.preventDefault(); 
+    const p=pos(e); 
+    pad.ctx.lineTo(p.x,p.y); 
+    pad.ctx.stroke(); 
+  }
+  
+  function end(e){ 
+    if(!pad.drawing) return; 
+    e.preventDefault(); 
+    pad.drawing=false;
+    canvas.classList.remove('drawing');
+  }
 
   canvas.addEventListener("mousedown",start);
   canvas.addEventListener("mousemove",move);
@@ -484,11 +507,13 @@ function setupSignaturePad(key, canvas){
   canvas.addEventListener("touchmove",move,{passive:false});
   canvas.addEventListener("touchend",end,{passive:false});
 }
+
 function clearSignature(key){
   const pad=sigPads[key];
   if(!pad.canvas || !pad.ctx) return;
   pad.ctx.clearRect(0,0,pad.canvas.width,pad.canvas.height);
 }
+
 function readSignature(key){
   const pad=sigPads[key];
   if(!pad.canvas) return "";
@@ -511,6 +536,7 @@ function openSignModal(){
     matchTimeInput.value = `${hh}:${mm}`;
   }
 }
+
 function closeSignModal(){ signModal.classList.add("hidden"); }
 
 // ===== Finalize =====
@@ -523,7 +549,6 @@ function finalizeMatch(){
   matchData.signatures.B = readSignature("B");
   matchData.signatures.R = readSignature("R");
 
-  // compute score by goals credited team
   const scoreA = matchData.goals.filter(g=>g.teamName===matchData.teamA).length;
   const scoreB = matchData.goals.filter(g=>g.teamName===matchData.teamB).length;
 
@@ -546,11 +571,10 @@ function finalizeMatch(){
     playedB.forEach(p=>{ const li=createEl("li"); li.textContent=`${p.soAo} - ${p.ten}`; finalTeamBList.appendChild(li); });
   } else { const li=createEl("li","dim"); li.textContent="(không đánh dấu ai ra sân)"; finalTeamBList.appendChild(li); }
 
-  // goals
   finalGoalsTbody.innerHTML="";
   if(matchData.goals.length){
     matchData.goals.forEach((g,idx)=>{
-      const typeTxt = g.ownGoal ? 'Phản lưới' : '—';
+      const typeTxt = g.ownGoal ? '<span class="badge badge-own">Phản lưới</span>' : '—';
       const tr=createEl("tr");
       tr.innerHTML=`
         <td>${idx+1}</td>
@@ -565,7 +589,6 @@ function finalizeMatch(){
     finalGoalsTbody.innerHTML=`<tr><td colspan="5" class="dim">(không có)</td></tr>`;
   }
 
-  // cards
   finalCardsTbody.innerHTML="";
   if(matchData.cards.length){
     matchData.cards.forEach((c,idx)=>{
@@ -583,7 +606,6 @@ function finalizeMatch(){
     finalCardsTbody.innerHTML=`<tr><td colspan="5" class="dim">(không có)</td></tr>`;
   }
 
-  // signatures preview
   sigAImg.src = matchData.signatures.A || "";
   sigBImg.src = matchData.signatures.B || "";
   sigRefImg.src = matchData.signatures.R || "";
@@ -598,8 +620,22 @@ function finalizeMatch(){
   closeSignModal();
 }
 
-// download JSON file (robust for Android/iOS/webviews)
+function validateBeforeDownload(){
+  if(!matchData.teamA || !matchData.teamB){
+    toast("Chưa chọn đội!");
+    return false;
+  }
+  if(!matchData.meta.date || !matchData.meta.time){
+    toast("Thiếu ngày/giờ thi đấu!");
+    return false;
+  }
+  // Đã bỏ validation điểm danh cầu thủ
+  return true;
+}
+
 function downloadJSON(){
+  if(!validateBeforeDownload()) return;
+  
   const scoreA = matchData.goals.filter(g=>g.teamName===matchData.teamA).length;
   const scoreB = matchData.goals.filter(g=>g.teamName===matchData.teamB).length;
   const playedA = matchData.lineupA.filter(p=>p.played).map(p=>({soAo:p.soAo,ten:p.ten}));
@@ -611,7 +647,7 @@ function downloadJSON(){
       A:{ name: matchData.teamA, score: scoreA, lineup: playedA },
       B:{ name: matchData.teamB, score: scoreB, lineup: playedB }
     },
-    goals: matchData.goals.slice(), // có thể chứa type / ownGoal / victimTeam
+    goals: matchData.goals.slice(),
     cards: matchData.cards.slice(),
     signatures:{
       captainA: matchData.signatures.A,
@@ -627,6 +663,38 @@ function downloadJSON(){
   const fname=`summary_${d}_${t}_${safeA}_vs_${safeB}`;
 
   downloadJSONRobust(out, fname);
+}
+
+function previewJSON(){
+  if(!validateBeforeDownload()) return;
+  
+  const scoreA = matchData.goals.filter(g=>g.teamName===matchData.teamA).length;
+  const scoreB = matchData.goals.filter(g=>g.teamName===matchData.teamB).length;
+  const playedA = matchData.lineupA.filter(p=>p.played).map(p=>({soAo:p.soAo,ten:p.ten}));
+  const playedB = matchData.lineupB.filter(p=>p.played).map(p=>({soAo:p.soAo,ten:p.ten}));
+
+  const out = {
+    meta:{ date: matchData.meta.date, time: matchData.meta.time, referee: matchData.meta.referee },
+    teams:{
+      A:{ name: matchData.teamA, score: scoreA, lineup: playedA },
+      B:{ name: matchData.teamB, score: scoreB, lineup: playedB }
+    },
+    goals: matchData.goals.slice(),
+    cards: matchData.cards.slice(),
+    signatures:{
+      captainA: matchData.signatures.A,
+      captainB: matchData.signatures.B,
+      referee: matchData.signatures.R
+    }
+  };
+  
+  alert(JSON.stringify(out, null, 2));
+}
+
+function resetAllForm(){
+  if(confirm('Xoá tất cả dữ liệu và bắt đầu lại?')){
+    location.reload();
+  }
 }
 
 // ===== INIT / BIND =====
@@ -666,6 +734,8 @@ function bindUI(){
   sigCanvasRef = $("#sigCanvasRef");
 
   btnDownloadJSON = $("#btnDownloadJSON");
+  btnPreviewJSON = $("#btnPreviewJSON");
+  btnResetForm = $("#btnResetForm");
   statusMsg = $("#statusMsg");
 
   finalSummarySection = $("#finalSummarySection");
@@ -691,7 +761,6 @@ function bindUI(){
   sigALabel = $("#sigALabel");
   sigBLabel = $("#sigBLabel");
 
-  // events
   teamASelect.addEventListener("change",()=>renderRoster("A"));
   teamBSelect.addEventListener("change",()=>renderRoster("B"));
 
@@ -704,7 +773,6 @@ function bindUI(){
   btnCloseModal.addEventListener("click",closeSignModal);
   $("#signModal .modal-bg").addEventListener("click",closeSignModal);
 
-  // Clear signature buttons
   document.querySelectorAll("[data-clear]").forEach(btn=>{
     btn.addEventListener("click",()=>{
       const k=btn.getAttribute("data-clear");
@@ -714,13 +782,13 @@ function bindUI(){
 
   btnFinishMatch.addEventListener("click",finalizeMatch);
   btnDownloadJSON.addEventListener("click",downloadJSON);
+  btnPreviewJSON.addEventListener("click",previewJSON);
+  btnResetForm.addEventListener("click",resetAllForm);
 
-  // setup signature pads
   setupSignaturePad("A", sigCanvasA);
   setupSignaturePad("B", sigCanvasB);
   setupSignaturePad("R", sigCanvasRef);
 
-  // attach delete listeners (after DOM is ready)
   goalsListTbody.addEventListener('click', onDeleteGoalClick);
   cardsListTbody.addEventListener('click', onDeleteCardClick);
 
@@ -731,5 +799,5 @@ function bindUI(){
 
 document.addEventListener("DOMContentLoaded",()=>{
   bindUI();
-  loadTeams(); // load teams.json -> dropdown đội
+  loadTeams();
 });
