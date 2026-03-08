@@ -3,6 +3,7 @@
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <meta name="apple-mobile-web-app-capable" content="yes">
   <title>Biên bản trận đấu</title>
   <link rel="stylesheet" href="style.css"/>
 </head>
@@ -17,7 +18,9 @@
     <div class="info-line">
       <span id="statusMsg" class="dim">Chưa hoàn tất</span>
     </div>
+    <button id="btnPreviewJSON" class="btn ghost small">👁 Xem trước</button>
     <button id="btnDownloadJSON" class="btn ghost small" disabled>Tải JSON trận</button>
+    <button id="btnResetForm" class="btn ghost small">⟲ Làm lại</button>
   </div>
 </header>
 
@@ -28,7 +31,7 @@
     <div class="card-header-row">
       <h2>1. Thiết lập trận đấu</h2>
       <div class="subnote">
-        Chọn 2 đội từ danh sách đã lưu.
+        Chọn 2 đội từ danh sách đã lưu trong <b>teams.json</b>.
       </div>
     </div>
 
@@ -186,7 +189,6 @@
           </table>
         </div>
       </div>
-
     </div>
   </section>
 
