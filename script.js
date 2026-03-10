@@ -56,7 +56,7 @@ async function downloadJSONRobust(obj, suggestedName){
   }
 }
 
-// ===== Global state =====
+// ===== Global state cho biên bản =====
 let allTeams = [];      // [{name:"FC A1", players:[{soAo,ten}, ...]}]
 let matchData = {
   teamA: null,
@@ -76,7 +76,13 @@ const sigPads = {
   R: {canvas:null, ctx:null, drawing:false},
 };
 
-// DOM refs
+// ===== Global state cho thông tin cầu thủ =====
+let allPlayers = [];
+let filteredPlayers = [];
+let selectedTeam = null;
+let selectedGroup = "";
+
+// DOM refs - Biên bản
 let teamASelect, teamBSelect;
 let teamARosterTbody, teamBRosterTbody;
 let teamANameLbl, teamBNameLbl;
@@ -86,15 +92,59 @@ let btnOpenSign, signModal, btnCloseModal, btnFinishMatch;
 let matchDateInput, matchTimeInput, refNameInput;
 let sigCanvasA, sigCanvasB, sigCanvasRef;
 let btnDownloadJSON, btnPreviewJSON, btnResetForm, statusMsg;
-
-// final summary DOM
 let finalSummarySection;
 let finalTimeText, finalRefText, finalMatchText, finalScoreText;
 let finalTeamATitle, finalTeamBTitle, finalTeamAList, finalTeamBList;
 let finalGoalsTbody, finalCardsTbody, sigAImg, sigBImg, sigRefImg;
 let signTeamALabel, signTeamBLabel, sigALabel, sigBLabel;
 
-// ===== Teams loader =====
+// DOM refs - Thông tin cầu thủ
+let searchInput, groupFilter, teamFilters, quickStats, playerGrid, totalPlayers, btnRefresh;
+
+// Tab management
+let currentTab = 'bienban';
+
+// ===== Tab Management =====
+function switchTab(tab) {
+  currentTab = tab;
+  
+  // Update tab buttons
+  const tabBienBan = $("#tabBienBan");
+  const tabThongTin = $("#tabThongTin");
+  const contentBienBan = $("#tabBienBanContent");
+  const contentThongTin = $("#tabThongTinContent");
+  const bienbanButtons = $("#bienbanButtons");
+  const thongtinButtons = $("#thongtinButtons");
+  const statusMsg = $("#statusMsg");
+  const totalPlayers = $("#totalPlayers");
+  
+  if (tab === 'bienban') {
+    tabBienBan.classList.add('active');
+    tabThongTin.classList.remove('active');
+    contentBienBan.classList.add('active');
+    contentThongTin.classList.remove('active');
+    bienbanButtons.style.display = 'flex';
+    thongtinButtons.style.display = 'none';
+    statusMsg.style.display = 'block';
+    totalPlayers.style.display = 'none';
+  } else {
+    tabBienBan.classList.remove('active');
+    tabThongTin.classList.add('active');
+    contentBienBan.classList.remove('active');
+    contentThongTin.classList.add('active');
+    bienbanButtons.style.display = 'none';
+    thongtinButtons.style.display = 'flex';
+    statusMsg.style.display = 'none';
+    totalPlayers.style.display = 'block';
+    
+    // Load data for player info tab if needed
+    if (allPlayers.length === 0) {
+      loadPlayerInfo();
+    }
+  }
+}
+
+// ===== Load teams.json cho biên bản =====
 async function loadTeams(){
   try{
     const r = await fetch("teams.json",{cache:"no-cache"});
@@ -151,6 +201,240 @@ function extractTeams(json){
   return arr;
 }
 
+// ===== Player Info Functions =====
+async function loadPlayerInfo(){
+  try{
+    const r = await fetch("teams.json",{cache:"no-cache"});
+    if(!r.ok) throw new Error("Không đọc được teams.json");
+    
+    const data = await r.json();
+    extractAllPlayers(data);
+    renderFilters();
+    renderPlayerGrid();
+    updateStats();
+    toast("Đã tải dữ liệu cầu thủ");
+  }catch(err){
+    console.error(err);
+    showError("Không thể tải danh sách đội. Vui lòng thử lại sau.");
+  }
+}
+
+function extractAllPlayers(json){
+  allPlayers = [];
+  
+  if(!json) return;
+  
+  const mode = (json.cheDo||"").toLowerCase();
+  
+  if(mode === "bang" && Array.isArray(json.bangs)){
+    json.bangs.forEach(group => {
+      const groupName = group.tenBang || "Bảng ?";
+      
+      if(Array.isArray(group.doi)){
+        group.doi.forEach(team => {
+          const teamName = team.tenDoi || "";
+          
+          if(Array.isArray(team.cauThu)){
+            team.cauThu.forEach(player => {
+              allPlayers.push({
+                teamName: teamName,
+                groupName: groupName,
+                number: String(player.soAo || ""),
+                name: player.ten || "",
+                imagePath: `images/${encodeURIComponent(teamName)}/${encodeURIComponent(player.soAo || "0")}.jpg`
+              });
+            });
+          }
+        });
+      }
+    });
+  }
+  
+  // Sort by team then number
+  allPlayers.sort((a, b) => {
+    if(a.teamName !== b.teamName) return a.teamName.localeCompare(b.teamName, 'vi');
+    return (parseInt(a.number) || 0) - (parseInt(b.number) || 0);
+  });
+  
+  if (totalPlayers) totalPlayers.textContent = `${allPlayers.length} cầu thủ`;
+}
+
+function renderFilters(){
+  const groupSelect = $("#groupFilter");
+  const groups = [...new Set(allPlayers.map(p => p.groupName))].sort();
+  
+  groups.forEach(group => {
+    const option = new Option(group, group);
+    groupSelect.appendChild(option);
+  });
+  
+  const teams = [...new Set(allPlayers.map(p => p.teamName))].sort((a,b) => a.localeCompare(b, 'vi'));
+  const teamFilters = $("#teamFilters");
+  teamFilters.innerHTML = '';
+  
+  const allBtn = createEl("div", "team-badge");
+  allBtn.textContent = "Tất cả đội";
+  allBtn.dataset.team = "";
+  if(!selectedTeam) allBtn.classList.add("active");
+  allBtn.addEventListener("click", () => {
+    selectedTeam = null;
+    document.querySelectorAll(".team-badge").forEach(b => b.classList.remove("active"));
+    allBtn.classList.add("active");
+    filterPlayers();
+  });
+  teamFilters.appendChild(allBtn);
+  
+  teams.forEach(team => {
+    const count = allPlayers.filter(p => p.teamName === team).length;
+    const badge = createEl("div", "team-badge");
+    badge.innerHTML = `${team} <span class="count">${count}</span>`;
+    badge.dataset.team = team;
+    if(selectedTeam === team) badge.classList.add("active");
+    
+    badge.addEventListener("click", () => {
+      selectedTeam = team;
+      document.querySelectorAll(".team-badge").forEach(b => b.classList.remove("active"));
+      badge.classList.add("active");
+      $("#groupFilter").value = "";
+      selectedGroup = "";
+      filterPlayers();
+    });
+    
+    teamFilters.appendChild(badge);
+  });
+  
+  groupSelect.addEventListener("change", (e) => {
+    selectedGroup = e.target.value;
+    selectedTeam = null;
+    document.querySelectorAll(".team-badge").forEach(b => b.classList.remove("active"));
+    $("#teamFilters .team-badge:first-child").classList.add("active");
+    filterPlayers();
+  });
+  
+  $("#searchInput").addEventListener("input", () => {
+    filterPlayers();
+  });
+}
+
+function filterPlayers(){
+  const searchTerm = $("#searchInput").value.toLowerCase().trim();
+  
+  filteredPlayers = allPlayers.filter(p => {
+    if(selectedTeam && p.teamName !== selectedTeam) return false;
+    if(selectedGroup && p.groupName !== selectedGroup) return false;
+    
+    if(searchTerm) {
+      const nameMatch = p.name.toLowerCase().includes(searchTerm);
+      const numberMatch = p.number.includes(searchTerm);
+      const teamMatch = p.teamName.toLowerCase().includes(searchTerm);
+      return nameMatch || numberMatch || teamMatch;
+    }
+    
+    return true;
+  });
+  
+  renderPlayerGrid();
+  updateStats();
+}
+
+function renderPlayerGrid(){
+  const grid = $("#playerGrid");
+  
+  if(filteredPlayers.length === 0){
+    grid.innerHTML = `
+      <div class="error-message">
+        <div style="font-size:48px; margin-bottom:16px;">🔍</div>
+        <div style="font-size:16px;">Không tìm thấy cầu thủ nào</div>
+        <div style="font-size:13px; margin-top:8px; color:var(--text-dim);">
+          Thử thay đổi bộ lọc hoặc tìm kiếm khác
+        </div>
+      </div>
+    `;
+    return;
+  }
+  
+  grid.innerHTML = "";
+  
+  filteredPlayers.forEach(player => {
+    const card = createEl("div", "player-card");
+    
+    const imgContainer = createEl("div", "player-image");
+    imgContainer.onclick = () => showImageModal(player.imagePath, player.name);
+    
+    const img = new Image();
+    img.onload = () => {
+      imgContainer.innerHTML = "";
+      imgContainer.appendChild(img);
+    };
+    img.onerror = () => {
+      imgContainer.innerHTML = '<div class="no-image">📸 Chưa có ảnh</div>';
+    };
+    img.src = player.imagePath;
+    img.alt = `${player.name} - ${player.number}`;
+    
+    const info = createEl("div", "player-info");
+    info.innerHTML = `
+      <div class="player-number">${player.number}</div>
+      <div class="player-name">${player.name}</div>
+      <div class="player-team">${player.teamName} · ${player.groupName}</div>
+    `;
+    
+    card.appendChild(imgContainer);
+    card.appendChild(info);
+    grid.appendChild(card);
+  });
+}
+
+function updateStats(){
+  const teams = [...new Set(filteredPlayers.map(p => p.teamName))].length;
+  const groups = [...new Set(filteredPlayers.map(p => p.groupName))].length;
+  
+  $("#quickStats").innerHTML = `
+    <div class="stat-card"><strong>${filteredPlayers.length}</strong> cầu thủ</div>
+    <div class="stat-card"><strong>${teams}</strong> đội</div>
+    <div class="stat-card"><strong>${groups}</strong> bảng</div>
+  `;
+}
+
+function showError(msg){
+  const grid = $("#playerGrid");
+  grid.innerHTML = `<div class="error-message">❌ ${msg}</div>`;
+}
+
+function refreshPlayerInfo(){
+  selectedTeam = null;
+  selectedGroup = "";
+  $("#searchInput").value = "";
+  $("#groupFilter").value = "";
+  
+  document.querySelectorAll(".team-badge").forEach(b => b.classList.remove("active"));
+  $("#teamFilters .team-badge:first-child").classList.add("active");
+  
+  filterPlayers();
+  toast("Đã làm mới");
+}
+
+function showImageModal(src, alt){
+  const modal = $("#imageModal");
+  const img = $("#modalImage");
+  img.src = src;
+  img.alt = alt;
+  modal.classList.remove("hidden");
+  
+  const close = () => modal.classList.add("hidden");
+  modal.querySelector(".modal-bg").addEventListener("click", close);
+  modal.querySelector(".modal-close").addEventListener("click", close);
+  
+  const escHandler = (e) => {
+    if(e.key === "Escape") {
+      close();
+      document.removeEventListener("keydown", escHandler);
+    }
+  };
+  document.addEventListener("keydown", escHandler);
+}
+
+// ===== Biên bản functions (giữ nguyên) =====
 function fillTeamDropdowns(failed=false){
   clearChildren(teamASelect);
   clearChildren(teamBSelect);
@@ -293,7 +577,6 @@ function attachTeamSelectEvents(){
   cardTeamSelect.addEventListener("change",()=>refreshPlayerDropdown("card"));
 }
 
-// ====== ADD / RENDER / DELETE GOAL ======
 function addGoal(){
   const tval = goalTeamSelect.value;
   const pval = goalPlayerSelect.value;
@@ -383,7 +666,6 @@ function onDeleteGoalClick(e){
   }
 }
 
-// ====== ADD / RENDER / DELETE CARD ======
 function addCard(){
   const tval = cardTeamSelect.value;
   const pval = cardPlayerSelect.value;
@@ -456,7 +738,6 @@ function onDeleteCardClick(e){
   }
 }
 
-// ===== Signature pad =====
 function setupSignaturePad(key, canvas){
   const pad = sigPads[key];
   pad.canvas = canvas;
@@ -520,7 +801,6 @@ function readSignature(key){
   return pad.canvas.toDataURL("image/png");
 }
 
-// ===== Modal logic =====
 function openSignModal(){
   if(!matchData.teamA || !matchData.teamB){
     toast("Chọn đội A & B trước");
@@ -539,7 +819,6 @@ function openSignModal(){
 
 function closeSignModal(){ signModal.classList.add("hidden"); }
 
-// ===== Finalize =====
 function finalizeMatch(){
   matchData.meta.date = matchDateInput.value.trim();
   matchData.meta.time = matchTimeInput.value.trim();
@@ -629,7 +908,6 @@ function validateBeforeDownload(){
     toast("Thiếu ngày/giờ thi đấu!");
     return false;
   }
-  // Đã bỏ validation điểm danh cầu thủ
   return true;
 }
 
@@ -699,6 +977,7 @@ function resetAllForm(){
 
 // ===== INIT / BIND =====
 function bindUI(){
+  // Biên bản DOM
   teamASelect = $("#teamASelect");
   teamBSelect = $("#teamBSelect");
   teamARosterTbody = $("#teamARosterTbody");
@@ -761,6 +1040,20 @@ function bindUI(){
   sigALabel = $("#sigALabel");
   sigBLabel = $("#sigBLabel");
 
+  // Thông tin cầu thủ DOM
+  searchInput = $("#searchInput");
+  groupFilter = $("#groupFilter");
+  teamFilters = $("#teamFilters");
+  quickStats = $("#quickStats");
+  playerGrid = $("#playerGrid");
+  totalPlayers = $("#totalPlayers");
+  btnRefresh = $("#btnRefresh");
+
+  // Tab buttons
+  $("#tabBienBan").addEventListener("click", () => switchTab('bienban'));
+  $("#tabThongTin").addEventListener("click", () => switchTab('thongtin'));
+
+  // Biên bản events
   teamASelect.addEventListener("change",()=>renderRoster("A"));
   teamBSelect.addEventListener("change",()=>renderRoster("B"));
 
@@ -792,12 +1085,19 @@ function bindUI(){
   goalsListTbody.addEventListener('click', onDeleteGoalClick);
   cardsListTbody.addEventListener('click', onDeleteCardClick);
 
+  // Thông tin cầu thủ events
+  btnRefresh.addEventListener("click", refreshPlayerInfo);
+
   updateSignLabels();
   renderGoalsTable();
   renderCardsTable();
+  
+  // Load data cho biên bản
+  loadTeams();
+  
+  // Không tự động load thông tin cầu thủ, sẽ load khi chuyển tab
 }
 
 document.addEventListener("DOMContentLoaded",()=>{
   bindUI();
-  loadTeams();
 });
