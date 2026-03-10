@@ -5,7 +5,7 @@
       "tenBang": "Bảng A",
       "doi": [
         {
-          "tenDoi": "D10 Plus",
+          "tenDoi": "D10 PLUS",
           "cauThu": [
             { "soAo": 19, "ten": "Đậu Bá Thành" },
             { "soAo": 10, "ten": "Cáp Xuân Sang" },
@@ -16,7 +16,7 @@
             { "soAo": 9,  "ten": "Nguyễn Tấn Thành" },
             { "soAo": 8,  "ten": "Hoàng Võ Nghĩa Nhân" },
             { "soAo": 15, "ten": "Ngô Quang Trường" },
-            { "soAo": 19, "ten": "Hạ Nguyễn Vĩnh Hưng" },
+            { "soAo": 99, "ten": "Hạ Nguyễn Vĩnh Hưng" },
             { "soAo": 7,  "ten": "Nguyễn Thanh Tùng" },
             { "soAo": 4,  "ten": "Trần Quốc Thuận" },
             { "soAo": 13, "ten": "Nguyễn Xuân Nam" },
